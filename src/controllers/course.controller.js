@@ -1,5 +1,5 @@
 const { th } = require("zod/locales");
-const { getPublishedCourses, findCourseById } = require("../repositories/course.repo");
+const { getPublishedCourses, findCourseById, getCoursesWithCount } = require("../repositories/course.repo");
 const { isAlreadyPurchased, createPurchase, getUserPurchases } = require("../repositories/purchase.repo");
 
 
@@ -8,13 +8,23 @@ async function getCourses(req, res) {
     
     const offset = (page - 1) * limit;
   
-    const courses = await getPublishedCourses(limit, offset);
+    const { courses, total } = await getCoursesWithCount(limit, offset);
+
+    const totalPages = Math.ceil(total / limit);
+
     return res.json({
       success: true,
-       page,
-       limit,
-       count: courses.length,
-       data: { courses }
+       data: {
+      courses,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1
+      }
+    }
       });
 }
 
