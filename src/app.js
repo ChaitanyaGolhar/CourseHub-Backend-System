@@ -4,8 +4,10 @@ const express = require("express");
 const app = express();
 const routes = require("./routes/routes");
 const errorMiddleware = require("./middleware/error.middleware");
+const { globalLimiter } = require("./middleware/rateLimit.middleware");
 
 app.use(express.json());
+app.use(globalLimiter)
 
 app.get("/health", (req, res) => {
   return res.status(200).json({

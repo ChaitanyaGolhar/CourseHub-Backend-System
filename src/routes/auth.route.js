@@ -5,8 +5,9 @@ const { signup, login } = require("../controllers/auth.controller");
 const validate = require("../middleware/validate.middleware");
 const { signupSchema, loginSchema } = require("../validators/auth.validator");
 const asyncHandler = require("../utils/asyncHandler");
+const { authLimiter } = require("../middleware/rateLimit.middleware");
 
-router.post("/signup", validate(signupSchema), asyncHandler(signup));
-router.post("/login", validate(loginSchema), asyncHandler(login));
+router.post("/signup", authLimiter, validate(signupSchema), asyncHandler(signup));
+router.post("/login", authLimiter, validate(loginSchema), asyncHandler(login));
 
 module.exports = router;
