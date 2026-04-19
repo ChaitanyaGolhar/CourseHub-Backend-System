@@ -2,16 +2,15 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { createUser, findUserByEmail } = require("../repositories/user.repo");
 const { success } = require("zod");
+const { th } = require("zod/locales");
 
 async function signup(req, res) {
-  try {
+  
     const { email, password } = req.validateData.body;
 
     const existing = await findUserByEmail(email);
     if (existing) {
-      return res.status(400).json({ 
-        success: false,
-        message: "user already exists" });
+      throw new Error("email already in use", 400);
     }
 
     const hash = await bcrypt.hash(password, 10);
@@ -21,29 +20,20 @@ async function signup(req, res) {
       success: true,
       message: "user created"
     });
-  } catch {
-    return res.status(500).json({ 
-      success: false,
-      message: "internal server error" });
-  }
+   
 }
 
 async function login(req, res) {
-  try {
     const { email, password } = req.validateData.body;
 
     const user = await findUserByEmail(email);
     if (!user) {
-      return res.status(400).json({ 
-        success: false,
-        message: "invalid credentials" });
+     throw new Error("invalid credentials", 400);
     }
 
     const match = await bcrypt.compare(password, user.password);
     if (!match) {
-      return res.status(400).json({ 
-        success: false,
-        message: "invalid credentials" });
+      throw new Error("invalid credentials", 400);
     }
 
     const token = jwt.sign(
@@ -57,11 +47,7 @@ async function login(req, res) {
       message: "login successful",
       data: { token }
     });
-  } catch {
-    return res.status(500).json({ 
-      success: false,
-      message: "internal server error" });
-  }
+  
 }
 
 module.exports = { signup, login };

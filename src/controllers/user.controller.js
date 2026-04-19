@@ -1,24 +1,16 @@
 const { findUserById } = require("../repositories/user.repo");
 
 async function getProfile(req, res) {
-  try {
     const user = await findUserById(req.user.id);
 
     if (!user) {
-      return res.status(404).json({ 
-        success: false,
-        message: "user not found" });
+      throw new Error("user not found", 404);
     }
 
     return res.json({ 
       success: true,
       data: { user }
     });
-  } catch {
-    return res.status(500).json({ 
-      success: false,
-      message: "internal server error" });
-  }
 }
 
 module.exports = { getProfile };

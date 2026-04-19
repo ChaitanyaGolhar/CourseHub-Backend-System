@@ -1,5 +1,7 @@
 const { success } = require("zod");
 const { findCourseById, createCourse, publishCourse, unpublishCourse } = require("../repositories/course.repo");
+const AppError = require("../utils/AppError");
+const { th } = require("zod/locales");
 
 async function createCourseHandler(req, res) {
   const { title, price } = req.validateData.body;
@@ -16,16 +18,12 @@ async function createCourseHandler(req, res) {
 async function publish(req, res) {
   const course = await findCourseById(req.validateData.params.id);
 
-  if (!course) return res.status(404).json({
-     success: false,
-     message: "not found" 
-    });
+  if (!course) {
+    throw new AppError("not found", 404);
+  }
 
   if (course.creator_id !== req.user.id) {
-    return res.status(403).json({ 
-      success: false, 
-      message: "forbidden"
-    });
+    throw new AppError("forbidden", 403);
   }
 
   await publishCourse(course.id);
@@ -39,16 +37,12 @@ async function publish(req, res) {
 async function unpublish(req, res) {
   const course = await findCourseById(req.validateData.params.id);
 
-  if (!course) return res.status(404).json({ 
-    success: false, 
-    message: "not found" 
-  });
+  if (!course) {
+    throw new AppError("not found", 404);
+  }
 
   if (course.creator_id !== req.user.id) {
-    return res.status(403).json({ 
-      success: false, 
-      message: "forbidden" 
-    });
+    throw new AppError("forbidden", 403);
   }
 
   await unpublishCourse(course.id);

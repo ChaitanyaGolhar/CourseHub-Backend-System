@@ -1,33 +1,26 @@
+const { th } = require("zod/locales");
 const { getCourseById } = require("../repositories/course.repo");
 
 const { alreadyPurchased, createPurchase } = require("../repositories/purchase.repo");
 
 async function purchaseCourse(req, res) {
-  try {
     const userId = req.user.id;
     const courseId = req.validateData.params.id;
 
     const course = await getCourseById(courseId);
 
     if (!course) {
-      return res.status(404).json({ 
-        success: false,
-        message: "course not found" });
+      throw new Error("course not found", 404);
     }
 
     if (!course.is_published) {
-      return res.status(400).json({ 
-        success: false,
-        message: "course not available" });
+      throw new Error("course not published", 400);
     }
 
     const exists = await alreadyPurchased(userId, courseId);
 
     if (exists) {
-      return res.status(400).json({
-        success: false,
-        message: "course already purchased",
-      });
+      throw new Error("course already purchased", 400);
     }
 
     try {
@@ -49,12 +42,6 @@ async function purchaseCourse(req, res) {
         course_id: courseId,
       },
     });
-  } catch (err) {
-    return res.status(500).json({
-      success: false,
-      message: "internal server error",
-    });
-  }
 }
 
 module.exports = { purchaseCourse };

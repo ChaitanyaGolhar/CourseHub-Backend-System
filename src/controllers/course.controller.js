@@ -1,9 +1,9 @@
+const { th } = require("zod/locales");
 const { getPublishedCourses, findCourseById } = require("../repositories/course.repo");
 const { isAlreadyPurchased, createPurchase, getUserPurchases } = require("../repositories/purchase.repo");
 
 
 async function getCourses(req, res) {
-  try {
     let { page, limit } = req.validateData.query;
     
     const offset = (page - 1) * limit;
@@ -16,43 +16,25 @@ async function getCourses(req, res) {
        count: courses.length,
        data: { courses }
       });
-    
-  } catch (e) {
-    console.error(e)
-    return res.status(500).json({
-      success: false,
-      message: "internal server error"
-    })
-  }
 }
 
 async function purchaseCourse(req, res) {
-  try {
     const courseId = req.validateData.params.id;
 
     const course = await findCourseById(courseId);
 
     if (!course) {
-      return res.status(404).json({
-        success: false,
-        message: "course not found"
-      });
+      throw new Error("course not found", 404);
     }
 
     if (!course.is_published) {
-      return res.status(400).json({
-        success: false,
-        message: "course not available"
-      });
+      throw new Error("course not published", 400);
     }
 
     const exists = await isAlreadyPurchased(req.user.id, courseId);
 
     if (exists) {
-      return res.status(400).json({
-        success: false,
-        message: "already purchased"
-      });
+     throw new Error("already purchased", 400);
     }
 
     try {
@@ -71,12 +53,6 @@ async function purchaseCourse(req, res) {
       success: true,
       message: "purchase successful"
     });
-  } catch {
-    return res.status(500).json({ 
-      success: false,
-      message: "internal server error"
-    });
-  }
 }
 
 async function getPurchasedCourses(req, res) {

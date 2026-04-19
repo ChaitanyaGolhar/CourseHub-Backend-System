@@ -3,6 +3,7 @@ require("dotenv").config();
 const express = require("express");
 const app = express();
 const routes = require("./routes/routes");
+const errorMiddleware = require("./middleware/error.middleware");
 
 app.use(express.json());
 
@@ -22,13 +23,6 @@ app.use((req, res) => {
   });
 });
 
-app.use((err, req, res, next) => {
-  console.error(err);
-
-  return res.status(500).json({
-    success: false,
-    message: "internal server error"
-  });
-});
+app.use(errorMiddleware)
 
 module.exports = app;
