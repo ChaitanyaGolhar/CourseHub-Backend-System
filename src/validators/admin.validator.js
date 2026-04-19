@@ -1,5 +1,4 @@
 const z = require('zod');
-const { param } = require('../routes/admin.route');
 
 const createCourseHandlerSchema = z.object({
     body: z.object({

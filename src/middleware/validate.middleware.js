@@ -11,7 +11,7 @@ function validate(schema){
         if (!result.success) {
             return res.status(400).json({
                 success: false,
-                errors: result.error.errors.map(e => ({
+                errors: result.error.issues.map(e => ({
                 field: e.path.join('.'),
                 message: e.message
                 }))
