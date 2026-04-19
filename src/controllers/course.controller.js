@@ -5,26 +5,22 @@ const { isAlreadyPurchased, createPurchase, getUserPurchases } = require("../rep
 async function getCourses(req, res) {
   try {
     let { page, limit } = req.validateData.query;
-
-    if(page <= 0 || limit <= 0){
-      return res.status(400).json({
-        message: "invalid pagination params"
-      })
-    }
     
     const offset = (page - 1) * limit;
   
     const courses = await getPublishedCourses(limit, offset);
     return res.json({
+      success: true,
        page,
        limit,
        count: courses.length,
-       courses 
+       data: { courses }
       });
     
   } catch (e) {
     console.error(e)
     return res.status(500).json({
+      success: false,
       message: "internal server error"
     })
   }
@@ -37,37 +33,58 @@ async function purchaseCourse(req, res) {
     const course = await findCourseById(courseId);
 
     if (!course) {
-      return res.status(404).json({ message: "course not found" });
+      return res.status(404).json({
+        success: false,
+        message: "course not found"
+      });
     }
 
     if (!course.is_published) {
-      return res.status(400).json({ message: "course not available" });
+      return res.status(400).json({
+        success: false,
+        message: "course not available"
+      });
     }
 
     const exists = await isAlreadyPurchased(req.user.id, courseId);
 
     if (exists) {
-      return res.status(400).json({ message: "already purchased" });
+      return res.status(400).json({
+        success: false,
+        message: "already purchased"
+      });
     }
 
     try {
       await createPurchase(req.user.id, courseId);
     } catch (e) {
       if (e.code === "23505") {
-        return res.status(400).json({ message: "already purchased" });
+        return res.status(400).json({ 
+          success: false,
+          message: "already purchased"
+        });
       }
       throw e;
     }
 
-    return res.status(201).json({ message: "purchase successful" });
+    return res.status(201).json({ 
+      success: true,
+      message: "purchase successful"
+    });
   } catch {
-    return res.status(500).json({ message: "internal server error" });
+    return res.status(500).json({ 
+      success: false,
+      message: "internal server error"
+    });
   }
 }
 
 async function getPurchasedCourses(req, res) {
   const courses = await getUserPurchases(req.user.id);
-  return res.json({ courses });
+  return res.json({ 
+    success: true,
+    data: { courses }
+  });
 }
 
 module.exports = {

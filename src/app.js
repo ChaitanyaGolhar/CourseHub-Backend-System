@@ -8,6 +8,7 @@ app.use(express.json());
 
 app.get("/health", (req, res) => {
   return res.status(200).json({
+    success: true,
     status: "ok"
   });
 });
@@ -16,6 +17,7 @@ app.use("/api", routes);
 
 app.use((req, res) => {
   return res.status(404).json({
+    success: false,
     message: "route not found"
   });
 });
@@ -24,6 +26,7 @@ app.use((err, req, res, next) => {
   console.error(err);
 
   return res.status(500).json({
+    success: false,
     message: "internal server error"
   });
 });

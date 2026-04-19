@@ -5,12 +5,19 @@ async function getProfile(req, res) {
     const user = await findUserById(req.user.id);
 
     if (!user) {
-      return res.status(404).json({ message: "user not found" });
+      return res.status(404).json({ 
+        success: false,
+        message: "user not found" });
     }
 
-    return res.json({ user });
+    return res.json({ 
+      success: true,
+      data: { user }
+    });
   } catch {
-    return res.status(500).json({ message: "internal server error" });
+    return res.status(500).json({ 
+      success: false,
+      message: "internal server error" });
   }
 }
 
