@@ -1,6 +1,7 @@
 const { findCourseById, createCourse, publishCourse, unpublishCourse, getMaxSectionOrder, createSection, findSectionById, getMaxLectureOrder, createLecture } = require("../repositories/course.repo");
 const AppError = require("../utils/AppError");
 const { th } = require("zod/locales");
+const uploadToCloudinary = require("../utils/uploadToCloudinary");
 
 async function createCourseHandler(req, res) {
   const { title, price, description, thumbnail_url } = req.validateData.body;
@@ -105,10 +106,26 @@ async function createLectureHandler(req, res){
   })
 }
 
+async function uploadThumbnail(req, res) {
+  if (!req.file) {
+    throw new AppError("file required", 400);
+  }
+
+  const result = await uploadToCloudinary(req.file.buffer, "thumbnails");
+
+  return res.json({
+    success: true,
+    data: {
+      url: result.secure_url
+    }
+  });
+}
+
 module.exports = {
   createCourseHandler,
   publish,
   unpublish,
   createSectionHandler,
-  createLectureHandler
+  createLectureHandler,
+  uploadThumbnail
 };
