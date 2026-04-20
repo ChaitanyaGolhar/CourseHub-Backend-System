@@ -3,10 +3,7 @@ require("dotenv").config();
 
 const pool = new Pool({
     connectionString: process.env.PGURI,
-    ssl: {
-      rejectUnauthorized: false,
-      
-    }
+    ssl:false
 })
 
 module.exports = pool;

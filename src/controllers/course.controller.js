@@ -1,5 +1,4 @@
-const { th } = require("zod/locales");
-const { getPublishedCourses, findCourseById, getCoursesWithCount } = require("../repositories/course.repo");
+const { findCourseById, getCoursesWithCount, getSectionsByCourse, getLecturesByCourse } = require("../repositories/course.repo");
 const { isAlreadyPurchased, createPurchase, getUserPurchases } = require("../repositories/purchase.repo");
 
 
@@ -73,8 +72,79 @@ async function getPurchasedCourses(req, res) {
   });
 }
 
+async function getCourseContent(req, res){
+  const courseId = req.validateData.params.id;
+
+  const course = await findCourseById(courseId)
+
+  if(!course){
+    throw new AppError("Course not found", 404);
+  }
+
+  const sections = await getSectionsByCourse(courseId);
+  const lectures = await getLecturesByCourse(courseId);
+
+  let hasFullAccess = false;
+
+  if (req.user) {
+    if (course.creator_id === req.user.id) {
+      hasFullAccess = true;
+    } else {
+      const purchased = await isAlreadyPurchased(req.user.id, courseId);
+      if (purchased) {
+        hasFullAccess = true;
+      }
+    }
+  }
+
+  const sectionMap = {};
+
+  sections.forEach(section => {
+    sectionMap[section.id] = {
+      id: section.id,
+      title: section.title,
+      lectures: []
+    }
+  })
+
+  lectures.forEach(lecture => {
+  if (!hasFullAccess && !lecture.is_preview) {
+    return;
+  }
+
+  if (sectionMap[lecture.section_id]) {
+    sectionMap[lecture.section_id].lectures.push({
+      id: lecture.id,
+      title: lecture.title,
+      video_url: lecture.video_url,
+      is_preview: lecture.is_preview
+    });
+  }
+});
+
+  const structuredSections = Object.values(sectionMap);
+
+  return res.json({
+    success: true,
+    data: {
+      course: {
+        id: course.id,
+        title: course.title,
+        description: course.description,
+        thumbnail_url: course.thumbnail_url,
+        sections: structuredSections
+      },
+      access: {
+        fullAccess: hasFullAccess
+      }
+    }
+  });
+
+}
+
 module.exports = {
   getCourses,
   purchaseCourse,
-  getPurchasedCourses
+  getPurchasedCourses,
+  getCourseContent
 };

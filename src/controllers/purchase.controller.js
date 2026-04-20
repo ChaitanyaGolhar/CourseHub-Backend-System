@@ -1,4 +1,3 @@
-const { th } = require("zod/locales");
 const { getCourseById } = require("../repositories/course.repo");
 
 const { alreadyPurchased, createPurchase } = require("../repositories/purchase.repo");

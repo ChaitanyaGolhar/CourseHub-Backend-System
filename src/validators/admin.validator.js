@@ -3,7 +3,9 @@ const z = require('zod');
 const createCourseHandlerSchema = z.object({
     body: z.object({
         title: z.string().min(1, "title is required"),
-        price: z.number().min(0, "price must be a positive number") 
+        description: z.string().optional(),
+        price: z.number().min(0, "price must be a positive number") ,
+        thumbnailUrl: z.string().optional()
     }),
     params: z.object({}),
     query: z.object({})
@@ -17,7 +19,28 @@ const publishUnpublishSchema = z.object({
     query: z.object({})
 })
 
+const createSectionHandlerScheme = z.object({
+    body: z.object({
+        title: z.string().min(1, "title is required"),
+        courseId: z.string().min(1, "courseId is required")
+    }),
+    params: z.object({}),
+    query: z.object({})
+})
+
+const createLectureHandlerScheme = z.object({
+    body: z.object({
+        title: z.string().min(1, "title is required"),
+        videoUrl: z.string().optional(),
+        sectionId: z.string().min(1, "courseId is required"),
+    }),
+    params: z.object({}),
+    query: z.object({})
+})
+
 module.exports = {
     createCourseHandlerSchema,
-    publishUnpublishSchema
+    publishUnpublishSchema,
+    createSectionHandlerScheme,
+    createLectureHandlerScheme
 }

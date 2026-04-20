@@ -17,9 +17,16 @@ const purchaseCourseSchema = z.object({
     query: z.object({})
 })
 
+const getCourseContentSchema = z.object({
+    body: z.object({}),
+    params: z.object({
+        id: z.coerce.number().int().positive()
+    }),
+    query: z.object({})
+})
 
 module.exports = {
     getCoursesSchema,
     purchaseCourseSchema,
-    
+    getCourseContentSchema
 }
