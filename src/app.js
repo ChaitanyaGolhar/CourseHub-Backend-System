@@ -5,6 +5,8 @@ const app = express();
 const routes = require("./routes/routes");
 const errorMiddleware = require("./middleware/error.middleware");
 const { globalLimiter } = require("./middleware/rateLimit.middleware");
+const cors = require("cors");
+app.use(cors());
 
 app.use(express.json());
 app.use(globalLimiter)
