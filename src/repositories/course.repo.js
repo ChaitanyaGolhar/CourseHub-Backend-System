@@ -87,6 +87,18 @@ async function findSectionById(sectionId) {
   return res.rows[0];
 }
 
+async function updateCourseThumbnail(id, videoUrl) {
+  const res = await pool.query(
+    `UPDATE courses
+     SET thumbnail_url = $1
+     WHERE id = $2
+     RETURNING *`,
+    [videoUrl, id]
+  );
+
+  return res.rows[0];
+}
+
 async function getMaxLectureOrder(sectionId) {
   const res = await pool.query(
     `SELECT COALESCE(MAX(order_index), 0) AS max_order
@@ -145,5 +157,6 @@ module.exports = {
   getMaxLectureOrder,
   createLecture,
   getSectionsByCourse,
-  getLecturesByCourse
+  getLecturesByCourse,
+  updateCourseThumbnail
 };

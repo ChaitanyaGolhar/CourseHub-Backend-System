@@ -4,8 +4,7 @@ const createCourseHandlerSchema = z.object({
     body: z.object({
         title: z.string().min(1, "title is required"),
         description: z.string().optional(),
-        price: z.number().min(0, "price must be a positive number") ,
-        thumbnailUrl: z.string().optional()
+        price: z.coerce.number().min(0, "price must be a positive number") 
     }),
     params: z.object({}),
     query: z.object({})
@@ -38,9 +37,18 @@ const createLectureHandlerScheme = z.object({
     query: z.object({})
 })
 
+const uploadThumbnailScheme = z.object({
+    body: z.object({}),
+    params: z.object({
+        courseId: z.string().min(1, "courseId is required")
+    }),
+    query: z.object({})
+})
+
 module.exports = {
     createCourseHandlerSchema,
     publishUnpublishSchema,
     createSectionHandlerScheme,
-    createLectureHandlerScheme
+    createLectureHandlerScheme,
+    uploadThumbnailScheme
 }
