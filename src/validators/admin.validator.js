@@ -45,10 +45,21 @@ const uploadThumbnailScheme = z.object({
     query: z.object({})
 })
 
+const uploadLectureVideoScheme = z.object({
+    body: z.object({}),
+    params: z.object({
+        lectureId: z.coerce.string().min(1, "lectureId is required"),
+        sectionId: z.coerce.string().min(1, "sectionId is required")
+    }),
+    query: z.object({})
+})
+
+
 module.exports = {
     createCourseHandlerSchema,
     publishUnpublishSchema,
     createSectionHandlerScheme,
     createLectureHandlerScheme,
-    uploadThumbnailScheme
+    uploadThumbnailScheme,
+    uploadLectureVideoScheme
 }

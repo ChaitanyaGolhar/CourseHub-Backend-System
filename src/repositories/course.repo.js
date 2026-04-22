@@ -145,6 +145,36 @@ async function getLecturesByCourse(courseId) {
   return res.rows;
 }
 
+async function findLectureById(id) {
+  const res = await pool.query(
+    `SELECT * FROM lectures WHERE id = $1`,
+    [id]
+  );
+  return res.rows[0];
+}
+
+async function updateLectureVideo(orderIndex, sectionId, videoUrl) {
+  const res = await pool.query(
+    `UPDATE lectures
+     SET video_url = $1
+     WHERE section_id = $2 AND order_index = $3
+     RETURNING *`,
+    [videoUrl, sectionId, orderIndex]
+  );
+
+  return res.rows[0];
+}
+
+async function findLectureInSectionById(lectureId, sectionId) {
+  const res = await pool.query(
+    `SELECT * FROM lectures
+     WHERE order_index = $1 AND section_id = $2`,
+    [lectureId, sectionId]
+  );
+  return res.rows[0];
+}
+
+
 module.exports = {
   createCourse,
   findCourseById,
@@ -158,5 +188,8 @@ module.exports = {
   createLecture,
   getSectionsByCourse,
   getLecturesByCourse,
-  updateCourseThumbnail
+  updateCourseThumbnail,
+  findLectureById,
+  updateLectureVideo,
+  findLectureInSectionById
 };

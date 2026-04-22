@@ -1,4 +1,4 @@
-const { findCourseById, createCourse, publishCourse, unpublishCourse, getMaxSectionOrder, createSection, findSectionById, getMaxLectureOrder, createLecture, updateCourseThumbnail } = require("../repositories/course.repo");
+const { findCourseById, createCourse, publishCourse, unpublishCourse, getMaxSectionOrder, createSection, findSectionById, getMaxLectureOrder, createLecture, updateCourseThumbnail, findLectureById, updateLectureVideo, findLectureInSectionById } = require("../repositories/course.repo");
 const AppError = require("../utils/AppError");
 const { th } = require("zod/locales");
 const uploadToCloudinary = require("../utils/uploadToCloudinary");
@@ -9,7 +9,7 @@ async function createCourseHandler(req, res) {
   let thumbnailUrl = null;
 
   if(req.file){
-    const result = await uploadToCloudinary(req.file.buffer, "thumbnails");
+    const result = await uploadToCloudinary(req.file.buffer, "thumbnails", "image");
     thumbnailUrl = result.secure_url;
   }
   const course = await createCourse(title, price, description, thumbnailUrl, req.user.id);
@@ -128,12 +128,49 @@ async function uploadThumbnail(req, res) {
     throw new AppError("forbidden", 403);
   } 
 
-  const result = await uploadToCloudinary(req.file.buffer, "thumbnails");
-  const updatedCourse = await updateCourseThumbnail(courseId, result.secure_url);
+const result = await uploadToCloudinary(req.file.buffer, "thumbnails", "image");
+const updatedCourse = await updateCourseThumbnail(courseId, result.secure_url);
 
   return res.json({
     success: true,
     data: {
+      courseId: courseId,
+      url: result.secure_url
+    }
+  });
+}
+
+async function uploadLectureVideo(req, res) {
+  const lectureId = req.validateData.params.lectureId;
+  const sectionId = req.validateData.params.sectionId;
+
+  if (!req.file) {
+    throw new AppError("file required", 400);
+  }
+
+  const lecture = await findLectureInSectionById(lectureId, sectionId);
+  
+  if (!lecture) {
+    throw new AppError("lecture not found", 404);
+  }
+
+  const section = await findSectionById(sectionId);
+  const course = await findCourseById(section.course_id);
+  if (!course) {
+    throw new AppError("course not found", 404);
+  }
+
+  if (course.creator_id !== req.user.id) {
+    throw new AppError("forbidden", 403);
+  } 
+
+  const result = await uploadToCloudinary(req.file.buffer, "Videos", "video");
+  const updatedLecture = await updateLectureVideo(lecture.order_index, lecture.section_id, result.secure_url);
+
+  return res.json({
+    success: true,
+    data: {
+      lectureId: lectureId,
       url: result.secure_url
     }
   });
@@ -145,5 +182,6 @@ module.exports = {
   unpublish,
   createSectionHandler,
   createLectureHandler,
-  uploadThumbnail
+  uploadThumbnail,
+  uploadLectureVideo
 };
