@@ -1,19 +1,180 @@
 const pool = require("../config/db");
 
-
 // ==================== COURSES ====================
-
-// Create course (already correct — uses creatorId)
-async function createCourse(title, price, description, thumbnail_url, creatorId) {
+async function createCourseRepo({ title, description, price, thumbnailUrl, creatorId }) {
   const res = await pool.query(
-    `INSERT INTO courses (title, price, description, thumbnail_url, creator_id)
-     VALUES ($1, $2, $3, $4, $5)
-     RETURNING *`,
-    [title, price, description, thumbnail_url, creatorId]
+    `INSERT INTO courses (title, description, price, thumbnail_url, creator_id)
+    VALUES ($1, $2, $3, $4, $5)
+    RETURNING *`,
+    [title, description, price, thumbnailUrl, creatorId]
   );
   return res.rows[0];
 }
 
+async function getCreatorCoursesRepo(creatorId) {
+  const res = await pool.query(
+    `
+    SELECT id, title, description, price, thumbnail_url, is_published, created_at
+    FROM courses
+    WHERE creator_id = $1
+    ORDER BY created_at DESC
+    `,
+    [creatorId]
+  );
+
+  return res.rows;
+}
+
+async function updateCourseRepo({ courseId, creatorId, data }) {
+  const { title, description, price } = data;
+
+  const res = await pool.query(
+    `
+    UPDATE courses
+    SET title = COALESCE($1, title),
+        description = COALESCE($2, description),
+        price = COALESCE($3, price)
+    WHERE id = $4 AND creator_id = $5
+    RETURNING *
+    `,
+    [title, description, price, courseId, creatorId]
+  );
+
+  return res.rows[0];
+}
+
+async function deleteCourseRepo(courseId, creatorId) {
+  const res = await pool.query(
+    `
+    DELETE FROM courses
+    WHERE id = $1 AND creator_id = $2
+    RETURNING *
+    `,
+    [courseId, creatorId]
+  );
+
+  return res.rows[0];
+}
+
+async function createSectionRepo({ title, courseId, creatorId, orderIndex }) {
+  const res = await pool.query(
+    `
+    INSERT INTO sections (title, course_id, order_index)
+    SELECT $1, c.id, $4
+    FROM courses c
+    WHERE c.id = $2 AND c.creator_id = $3
+    RETURNING *
+    `,
+    [title, courseId, creatorId, orderIndex]
+  );
+
+  return res.rows[0];
+}
+
+async function createLectureRepo({ title, sectionId, creatorId, orderIndex, isPreview }) {
+  const res = await pool.query(
+    `
+    INSERT INTO lectures (title, section_id, order_index, is_preview)
+    SELECT $1, s.id, $4, $5
+    FROM sections s
+    JOIN courses c ON s.course_id = c.id
+    WHERE s.id = $2 AND c.creator_id = $3
+    RETURNING *
+    `,
+    [title, sectionId, creatorId, orderIndex, isPreview]
+  );
+
+  return res.rows[0];
+}
+
+async function updateLectureVideoRepo({ lectureId, creatorId, videoUrl }) {
+  const res = await pool.query(
+    `
+    UPDATE lectures l
+    SET video_url = $1
+    FROM sections s, courses c
+    WHERE l.section_id = s.id
+      AND s.course_id = c.id
+      AND l.id = $2
+      AND c.creator_id = $3
+    RETURNING l.*
+    `,
+    [videoUrl, lectureId, creatorId]
+  );
+
+  return res.rows[0];
+}
+
+async function updateCourseThumbnailRepo({ courseId, creatorId, url }) {
+  const res = await pool.query(
+    `
+    UPDATE courses
+    SET thumbnail_url = $1
+    WHERE id = $2 AND creator_id = $3
+    RETURNING *
+    `,
+    [url, courseId, creatorId]
+  );
+
+  return res.rows[0];
+}
+
+async function getMaxSectionOrder(courseId) {
+  const res = await pool.query(
+    `SELECT COALESCE(MAX(order_index), 0) as max FROM sections WHERE course_id = $1`,
+    [courseId]
+  );
+  return res.rows[0].max;
+}
+
+async function getMaxLectureOrder(sectionId) {
+  const res = await pool.query(
+    `SELECT COALESCE(MAX(order_index), 0) as max FROM lectures WHERE section_id = $1`,
+    [sectionId]
+  );
+  return res.rows[0].max;
+}
+
+async function publishCourseRepo(courseId, creatorId) {
+  const res = await pool.query(
+    `
+    UPDATE courses
+    SET is_published = true
+    WHERE id = $1 AND creator_id = $2
+    RETURNING *
+    `,
+    [courseId, creatorId]
+  );
+  return res.rows[0];
+}
+
+async function unpublishCourseRepo(courseId, creatorId) {
+  const res = await pool.query(
+    `
+    UPDATE courses
+    SET is_published = false
+    WHERE id = $1 AND creator_id = $2
+    RETURNING *
+    `,
+    [courseId, creatorId]
+  );
+  return res.rows[0];
+}
+
+async function getPublishedCoursesByCreatorId(creatorId) {
+  const res = await pool.query(
+    `
+    SELECT id, title, description, price, thumbnail_url, created_at
+    FROM courses
+    WHERE creator_id = $1
+      AND is_published = true
+    ORDER BY created_at DESC
+    `,
+    [creatorId]
+  );
+
+  return res.rows;
+}
 
 // 🔒 Find course WITH ownership check
 async function findCourseByIdAndCreator(courseId, creatorId) {
@@ -25,7 +186,6 @@ async function findCourseByIdAndCreator(courseId, creatorId) {
   return res.rows[0];
 }
 
-
 // Public fetch (no ownership)
 async function findCourseById(courseId) {
   const res = await pool.query(
@@ -34,41 +194,6 @@ async function findCourseById(courseId) {
   );
   return res.rows[0];
 }
-
-
-// Creator lookup (belongs in creator.repo ideally, but OK for now)
-async function findCreatorByUserId(userId) {
-  const res = await pool.query(
-    `SELECT * FROM creators WHERE user_id = $1`,
-    [userId]
-  );
-  return res.rows[0];
-}
-
-
-// Publish / Unpublish WITH ownership
-async function publishCourse(courseId, creatorId) {
-  const res = await pool.query(
-    `UPDATE courses
-     SET is_published = true
-     WHERE id = $1 AND creator_id = $2
-     RETURNING *`,
-    [courseId, creatorId]
-  );
-  return res.rows[0];
-}
-
-async function unpublishCourse(courseId, creatorId) {
-  const res = await pool.query(
-    `UPDATE courses
-     SET is_published = false
-     WHERE id = $1 AND creator_id = $2
-     RETURNING *`,
-    [courseId, creatorId]
-  );
-  return res.rows[0];
-}
-
 
 // Public courses
 async function getCoursesWithCount(limit, offset) {
@@ -95,173 +220,22 @@ async function getCoursesWithCount(limit, offset) {
   };
 }
 
-
-// ==================== SECTIONS ====================
-
-// 🔒 Create section ONLY if course belongs to creator
-async function createSection(title, courseId, orderIndex, creatorId) {
-  const res = await pool.query(
-    `
-    INSERT INTO sections (title, course_id, order_index)
-    SELECT $1, $2, $3
-    WHERE EXISTS (
-      SELECT 1 FROM courses
-      WHERE id = $2 AND creator_id = $4
-    )
-    RETURNING *
-    `,
-    [title, courseId, orderIndex, creatorId]
-  );
-
-  return res.rows[0];
-}
-
-
-async function getMaxSectionOrder(courseId) {
-  const res = await pool.query(
-    `SELECT COALESCE(MAX(order_index), 0) AS max_order
-     FROM sections
-     WHERE course_id = $1`,
-    [courseId]
-  );
-
-  return res.rows[0].max_order;
-}
-
-
-// 🔒 Section with ownership
-async function findSectionByIdAndCreator(sectionId, creatorId) {
-  const res = await pool.query(
-    `
-    SELECT s.*
-    FROM sections s
-    JOIN courses c ON s.course_id = c.id
-    WHERE s.id = $1 AND c.creator_id = $2
-    `,
-    [sectionId, creatorId]
-  );
-
-  return res.rows[0];
-}
-
-
-// ==================== LECTURES ====================
-
-// 🔒 Create lecture safely
-async function createLecture(title, videoUrl, sectionId, orderIndex, isPreview, creatorId) {
-  const res = await pool.query(
-    `
-    INSERT INTO lectures (title, video_url, section_id, order_index, is_preview)
-    SELECT $1, $2, $3, $4, $5
-    WHERE EXISTS (
-      SELECT 1
-      FROM sections s
-      JOIN courses c ON s.course_id = c.id
-      WHERE s.id = $3 AND c.creator_id = $6
-    )
-    RETURNING *
-    `,
-    [title, videoUrl, sectionId, orderIndex, isPreview, creatorId]
-  );
-
-  return res.rows[0];
-}
-
-
-async function getMaxLectureOrder(sectionId) {
-  const res = await pool.query(
-    `SELECT COALESCE(MAX(order_index), 0) AS max_order
-     FROM lectures
-     WHERE section_id = $1`,
-    [sectionId]
-  );
-
-  return res.rows[0].max_order;
-}
-
-
-// 🔒 Lecture with ownership
-async function findLectureByIdAndCreator(lectureId, creatorId) {
-  const res = await pool.query(
-    `
-    SELECT l.*
-    FROM lectures l
-    JOIN sections s ON l.section_id = s.id
-    JOIN courses c ON s.course_id = c.id
-    WHERE l.id = $1 AND c.creator_id = $2
-    `,
-    [lectureId, creatorId]
-  );
-
-  return res.rows[0];
-}
-
-
-// 🔒 Update lecture video safely
-async function updateLectureVideo(lectureId, videoUrl, creatorId) {
-  const res = await pool.query(
-    `
-    UPDATE lectures l
-    SET video_url = $1
-    FROM sections s, courses c
-    WHERE l.section_id = s.id
-      AND s.course_id = c.id
-      AND l.id = $2
-      AND c.creator_id = $3
-    RETURNING l.*
-    `,
-    [videoUrl, lectureId, creatorId]
-  );
-
-  return res.rows[0];
-}
-
-
-// ==================== PUBLIC READ ====================
-
-async function getSectionsByCourse(courseId) {
-  const res = await pool.query(
-    `SELECT * FROM sections
-     WHERE course_id = $1
-     ORDER BY order_index ASC`,
-    [courseId]
-  );
-
-  return res.rows;
-}
-
-
-async function getLecturesByCourse(courseId) {
-  const res = await pool.query(
-    `SELECT l.*
-     FROM lectures l
-     JOIN sections s ON l.section_id = s.id
-     WHERE s.course_id = $1
-     ORDER BY l.order_index ASC`,
-    [courseId]
-  );
-
-  return res.rows;
-}
-
-
-// ==================== EXPORT ====================
-
 module.exports = {
-  createCourse,
-  findCourseById,
-  findCourseByIdAndCreator,
-  findCreatorByUserId,
-  getCoursesWithCount,
-  publishCourse,
-  unpublishCourse,
-  createSection,
+  createCourseRepo,
+  getCreatorCoursesRepo,
+  updateCourseRepo,
+  deleteCourseRepo,
+  createSectionRepo,
+  createLectureRepo,
+  updateLectureVideoRepo,
+  updateCourseThumbnailRepo,
   getMaxSectionOrder,
-  findSectionByIdAndCreator,
   getMaxLectureOrder,
-  createLecture,
-  getSectionsByCourse,
-  getLecturesByCourse,
-  updateLectureVideo,
-  findLectureByIdAndCreator
+  publishCourseRepo,
+  unpublishCourseRepo,
+  getPublishedCoursesByCreatorId,
+  findCourseByIdAndCreator,
+  findCourseById,
+  getCoursesWithCount
+
 };

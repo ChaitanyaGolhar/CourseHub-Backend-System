@@ -4,7 +4,7 @@ const { createUser, findUserByEmail } = require("../repositories/user.repo");
 const { success } = require("zod");
 const { th } = require("zod/locales");
 const AppError = require("../utils/AppError");
-const { findCreatorByUserId } = require("../repositories/course.repo");
+const { findCreatorByUserId } = require("../repositories/creator.repo");
 
 async function signup(req, res) {
     const { email, password } = req.validatedData.body;

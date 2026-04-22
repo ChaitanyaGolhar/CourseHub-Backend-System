@@ -1,4 +1,4 @@
-function adminMiddleware(req, res, next) {
+function requireCreator(req, res, next) {
   if (!req.user) {
     return res.status(401).json({ message: "unauthorized" });
   }
@@ -10,4 +10,4 @@ function adminMiddleware(req, res, next) {
   next();
 }
 
-module.exports = adminMiddleware;
+module.exports = requireCreator;
