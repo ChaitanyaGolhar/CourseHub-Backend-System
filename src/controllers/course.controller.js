@@ -1,11 +1,12 @@
 const { findCourseById, getCoursesWithCount, getSectionsByCourse, getLecturesByCourse } = require("../repositories/course.repo");
 const { isAlreadyPurchased, createPurchase, getUserPurchases } = require("../repositories/purchase.repo");
 const { getCourseContentService } = require("../services/course.service");
+const { purchaseCourseService } = require("../services/purchase.service");
 const AppError = require("../utils/AppError");
 
 
 async function getCourses(req, res) {
-    let { page, limit } = req.validateData.query;
+    let { page, limit } = req.validatedData.query;
     
     const offset = (page - 1) * limit;
   
@@ -30,7 +31,7 @@ async function getCourses(req, res) {
 }
 
 async function purchaseCourse(req, res) {
-    const courseId = req.validateData.params.id;
+    const courseId = req.validatedData.params.creatorId;
 
     const course = await findCourseById(courseId);
 
@@ -42,23 +43,9 @@ async function purchaseCourse(req, res) {
       throw new AppError("course not published", 400);
     }
 
-    const exists = await isAlreadyPurchased(req.user.id, courseId);
-
-    if (exists) {
-     throw new AppError("already purchased", 400);
-    }
-
-    try {
-      await createPurchase(req.user.id, courseId);
-    } catch (e) {
-      if (e.code === "23505") {
-        return res.status(400).json({ 
-          success: false,
-          message: "already purchased"
-        });
-      }
-      throw e;
-    }
+    const exists = await purchaseCourseService({ 
+      userId: req.user.creatorId,
+      courseId });
 
     return res.status(201).json({ 
       success: true,
@@ -67,7 +54,7 @@ async function purchaseCourse(req, res) {
 }
 
 async function getPurchasedCourses(req, res) {
-  const courses = await getUserPurchases(req.user.id);
+  const courses = await getUserPurchases(req.user.creatorId);
   return res.json({ 
     success: true,
     data: { courses }

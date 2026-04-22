@@ -1,10 +1,9 @@
 const { findCourseById, createCourse, publishCourse, unpublishCourse, getMaxSectionOrder, createSection, findSectionById, getMaxLectureOrder, createLecture, updateCourseThumbnail, findLectureById, updateLectureVideo, findLectureInSectionById } = require("../repositories/course.repo");
 const AppError = require("../utils/AppError");
-const { th } = require("zod/locales");
 const uploadToCloudinary = require("../utils/uploadToCloudinary");
 
 async function createCourseHandler(req, res) {
-  const { title, price, description } = req.validateData.body;
+  const { title, price, description } = req.validatedData.body;
 
   let thumbnailUrl = null;
 
@@ -12,7 +11,7 @@ async function createCourseHandler(req, res) {
     const result = await uploadToCloudinary(req.file.buffer, "thumbnails", "image");
     thumbnailUrl = result.secure_url;
   }
-  const course = await createCourse(title, price, description, thumbnailUrl, req.user.id);
+  const course = await createCourse(title, price, description, thumbnailUrl, req.user.creatorId);
 
   return res.status(201).json({
      success: true,
@@ -22,13 +21,13 @@ async function createCourseHandler(req, res) {
 }
 
 async function publish(req, res) {
-  const course = await findCourseById(req.validateData.params.id);
+  const course = await findCourseById(req.validatedData.params.id);
 
   if (!course) {
     throw new AppError("not found", 404);
   }
 
-  if (course.creator_id !== req.user.id) {
+  if (course.creatorId !== req.user.creatorId) {
     throw new AppError("forbidden", 403);
   }
 
@@ -41,13 +40,13 @@ async function publish(req, res) {
 }
 
 async function unpublish(req, res) {
-  const course = await findCourseById(req.validateData.params.id);
+  const course = await findCourseById(req.validatedData.params.id);
 
   if (!course) {
     throw new AppError("not found", 404);
   }
 
-  if (course.creator_id !== req.user.id) {
+  if (course.creatorId !== req.user.creatorId) {
     throw new AppError("forbidden", 403);
   }
 
@@ -60,7 +59,7 @@ async function unpublish(req, res) {
 }
 
 async function createSectionHandler(req, res) {
-  const { title, courseId } = req.validateData.body;
+  const { title, courseId } = req.validatedData.body;
 
   const course = await findCourseById(courseId);
 
@@ -68,7 +67,7 @@ async function createSectionHandler(req, res) {
     throw new AppError("course not found", 400)
   }
 
-  if(course.creator_id !== req.user.id){
+  if(course.creatorId !== req.user.creatorId){
     throw new AppError("forbidden", 403)
   }
 
@@ -84,7 +83,7 @@ async function createSectionHandler(req, res) {
 }
 
 async function createLectureHandler(req, res){
-  const { title, videoUrl, sectionId, isPreview = false } = req.validateData.body;
+  const { title, videoUrl, sectionId, isPreview = false } = req.validatedData.body;
   const section = await findSectionById(sectionId);
 
   if(!section){
@@ -96,7 +95,7 @@ async function createLectureHandler(req, res){
     throw new AppError("course not found", 400)
   }
 
-  if(course.creator_id !== req.user.id){
+  if(course.creatorId !== req.user.creatorId){
     throw new AppError("forbidden", 403)
   }
 
@@ -113,7 +112,7 @@ async function createLectureHandler(req, res){
 }
 
 async function uploadThumbnail(req, res) {
-  const courseId = req.validateData.params.courseId;
+  const courseId = req.validatedData.params.courseId;
 
   if (!req.file) {
     throw new AppError("file required", 400);
@@ -124,7 +123,7 @@ async function uploadThumbnail(req, res) {
     throw new AppError("course not found", 404);
   }
 
-  if (course.creator_id !== req.user.id) {
+  if (course.creatorId !== req.user.creatorId) {
     throw new AppError("forbidden", 403);
   } 
 
@@ -141,8 +140,8 @@ const updatedCourse = await updateCourseThumbnail(courseId, result.secure_url);
 }
 
 async function uploadLectureVideo(req, res) {
-  const lectureId = req.validateData.params.lectureId;
-  const sectionId = req.validateData.params.sectionId;
+  const lectureId = req.validatedData.params.lectureId;
+  const sectionId = req.validatedData.params.sectionId;
 
   if (!req.file) {
     throw new AppError("file required", 400);
@@ -160,7 +159,7 @@ async function uploadLectureVideo(req, res) {
     throw new AppError("course not found", 404);
   }
 
-  if (course.creator_id !== req.user.id) {
+  if (course.creatorId !== req.user.creatorId) {
     throw new AppError("forbidden", 403);
   } 
 

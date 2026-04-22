@@ -23,6 +23,7 @@ function authMiddleware(req, res, next) {
     req.user = {
       id: decoded.userId,
       role: decoded.role,
+      creatorId: decoded.creatorId
     };
 
     next();

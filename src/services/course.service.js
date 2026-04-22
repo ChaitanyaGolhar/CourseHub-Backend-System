@@ -14,10 +14,10 @@ async function getCourseContentService({ courseId, user }) {
   let hasFullAccess = false;
 
   if (user) {
-    if (course.creator_id === user.id) {
+    if (course.creatorId === user.creatorId) {
       hasFullAccess = true;
     } else {
-      const purchased = await isAlreadyPurchased(user.id, courseId);
+      const purchased = await isAlreadyPurchased(user.creatorId, courseId);
       hasFullAccess = !!purchased;
     }
   }

@@ -3,7 +3,7 @@ function adminMiddleware(req, res, next) {
     return res.status(401).json({ message: "unauthorized" });
   }
 
-  if (req.user.role !== "admin") {
+  if (!req.user.creatorId) {
     return res.status(403).json({ message: "forbidden" });
   }
 

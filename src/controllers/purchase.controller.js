@@ -5,7 +5,7 @@ const AppError = require("../utils/AppError");
 
 async function purchaseCourse(req, res) {
     const userId = req.user.id;
-    const courseId = req.validateData.params.id;
+    const courseId = req.validatedData.params.courseId;
 
     const course = await getCourseById(courseId);
 

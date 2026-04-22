@@ -4,10 +4,10 @@ const { createUser, findUserByEmail } = require("../repositories/user.repo");
 const { success } = require("zod");
 const { th } = require("zod/locales");
 const AppError = require("../utils/AppError");
+const { findCreatorByUserId } = require("../repositories/course.repo");
 
 async function signup(req, res) {
-  
-    const { email, password } = req.validateData.body;
+    const { email, password } = req.validatedData.body;
 
     const existing = await findUserByEmail(email);
     if (existing) {
@@ -25,7 +25,7 @@ async function signup(req, res) {
 }
 
 async function login(req, res) {
-    const { email, password } = req.validateData.body;
+    const { email, password } = req.validatedData.body;
 
     const user = await findUserByEmail(email);
     if (!user) {
@@ -37,8 +37,15 @@ async function login(req, res) {
       throw new AppError("invalid credentials", 400);
     }
 
+    const creator = await findCreatorByUserId(user.id);
+
+    const payload = {
+      userId: user.id,
+      role: user.role,
+      creatorId: creator?.id || null
+    };
     const token = jwt.sign(
-      { userId: user.id, role: user.role },
+      payload,
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
