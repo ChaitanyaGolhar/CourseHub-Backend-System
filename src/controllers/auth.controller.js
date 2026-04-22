@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const { createUser, findUserByEmail } = require("../repositories/user.repo");
 const { success } = require("zod");
 const { th } = require("zod/locales");
+const AppError = require("../utils/AppError");
 
 async function signup(req, res) {
   
@@ -10,7 +11,7 @@ async function signup(req, res) {
 
     const existing = await findUserByEmail(email);
     if (existing) {
-      throw new Error("email already in use", 400);
+      throw new AppError("email already in use", 400);
     }
 
     const hash = await bcrypt.hash(password, 10);
@@ -28,12 +29,12 @@ async function login(req, res) {
 
     const user = await findUserByEmail(email);
     if (!user) {
-     throw new Error("invalid credentials", 400);
+     throw new AppError("invalid credentials", 400);
     }
 
     const match = await bcrypt.compare(password, user.password);
     if (!match) {
-      throw new Error("invalid credentials", 400);
+      throw new AppError("invalid credentials", 400);
     }
 
     const token = jwt.sign(

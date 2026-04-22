@@ -1,6 +1,7 @@
 const { getCourseById } = require("../repositories/course.repo");
 
 const { alreadyPurchased, createPurchase } = require("../repositories/purchase.repo");
+const AppError = require("../utils/AppError");
 
 async function purchaseCourse(req, res) {
     const userId = req.user.id;
@@ -9,17 +10,17 @@ async function purchaseCourse(req, res) {
     const course = await getCourseById(courseId);
 
     if (!course) {
-      throw new Error("course not found", 404);
+      throw new AppError("course not found", 404);
     }
 
     if (!course.is_published) {
-      throw new Error("course not published", 400);
+      throw new AppError("course not published", 400);
     }
 
     const exists = await alreadyPurchased(userId, courseId);
 
     if (exists) {
-      throw new Error("course already purchased", 400);
+      throw new AppError("course already purchased", 400);
     }
 
     try {
