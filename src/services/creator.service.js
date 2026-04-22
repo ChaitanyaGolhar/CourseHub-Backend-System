@@ -1,6 +1,6 @@
 const { findCreatorByUserId, findCreatorByHandle, createCreator } = require("../repositories/creator.repo");
 const AppError = require("../utils/AppError");
-const { createCourseRepo, getCreatorCoursesRepo, updateCourseRepo, deleteCourseRepo, createSectionRepo, createLectureRepo, updateLectureVideoRepo, updateCourseThumbnailRepo, publishCourseRepo, unpublishCourseRepo, getMaxSectionOrder, getMaxLectureOrder, getPublishedCoursesByCreatorId } = require("../repositories/course.repo");
+const { createCourseRepo, getCreatorCoursesRepo, updateCourseRepo, deleteCourseRepo, createSectionRepo, createLectureRepo, updateLectureVideoRepo, updateCourseThumbnailRepo, publishCourseRepo, unpublishCourseRepo, getMaxSectionOrder, getMaxLectureOrder, getPublishedCoursesByCreatorId, getSectionsByCourseRepo, getLecturesBySectionRepo, getCreatorFullDataRepo } = require("../repositories/course.repo");
 const uploadToCloudinary  = require("../utils/uploadToCloudinary");
 
 async function createCreatorService({ userId, handle, brandName }) {
@@ -187,6 +187,78 @@ async function unpublishCourseService(courseId, creatorId) {
   return course;
 }
 
+async function getSectionsByCourseService(courseId, creatorId) {
+  const sections = await getSectionsByCourseRepo(courseId, creatorId);
+
+  if (!sections) {
+    throw new AppError("course not found or forbidden", 404);
+  }
+
+  return sections;
+}
+
+async function getLecturesBySectionService(sectionId, creatorId) {
+  const lectures = await getLecturesBySectionRepo(sectionId, creatorId);
+
+  if (!lectures) {
+    throw new AppError("section not found or forbidden", 404);
+  }
+
+  return lectures;
+}
+
+async function getCreatorDashboardService(creatorId) {
+  const rows = await getCreatorFullDataRepo(creatorId);
+
+  const coursesMap = new Map();
+
+  for (const row of rows) {
+    // 1. Course
+    if (!coursesMap.has(row.course_id)) {
+      coursesMap.set(row.course_id, {
+        id: row.course_id,
+        title: row.course_title,
+        description: row.description,
+        price: row.price,
+        thumbnail_url: row.thumbnail_url,
+        is_published: row.is_published,
+        created_at: row.created_at,
+        sections: []
+      });
+    }
+
+    const course = coursesMap.get(row.course_id);
+
+    // 2. Section
+    if (row.section_id) {
+      let section = course.sections.find(s => s.id === row.section_id);
+
+      if (!section) {
+        section = {
+          id: row.section_id,
+          title: row.section_title,
+          order_index: row.section_order,
+          lectures: []
+        };
+        course.sections.push(section);
+      }
+
+      // 3. Lecture
+      if (row.lecture_id) {
+        section.lectures.push({
+          id: row.lecture_id,
+          title: row.lecture_title,
+          video_url: row.video_url,
+          order_index: row.lecture_order,
+          is_preview: row.is_preview
+        });
+      }
+    }
+  }
+
+  return Array.from(coursesMap.values());
+}
+
 module.exports = {
   createCreatorService,
   getPublicCreatorCoursesService,
@@ -199,6 +271,9 @@ module.exports = {
   updateLectureVideoService,
   updateCourseThumbnailService,
   publishCourseService,
-  unpublishCourseService
+  unpublishCourseService,
+  getSectionsByCourseService,
+  getLecturesBySectionService,
+  getCreatorDashboardService
 
 };

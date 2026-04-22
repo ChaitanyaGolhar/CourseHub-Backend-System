@@ -1,4 +1,4 @@
-const { createCreatorService, getPublicCreatorCoursesService, createCourseService, getCreatorCoursesService, updateCourseService, createSectionService, createLectureService, updateLectureVideoService, updateCourseThumbnailService, publishCourseService, unpublishCourseService } = require("../services/creator.service");
+const { createCreatorService, getPublicCreatorCoursesService, createCourseService, getCreatorCoursesService, updateCourseService, createSectionService, createLectureService, updateLectureVideoService, updateCourseThumbnailService, publishCourseService, unpublishCourseService, getSectionsByCourseService, getLecturesBySectionService, getCreatorDashboardService } = require("../services/creator.service");
 
 async function createCreatorHandler(req, res) {
   const { handle, brandName } = req.validatedData.body;
@@ -150,6 +150,43 @@ async function unpublishCourseHandler(req, res) {
   });
 }
 
+async function getSectionsByCourseHandler(req, res) {
+  const { courseId } = req.params;
+
+  const sections = await getSectionsByCourseService(
+    courseId,
+    req.user.creatorId
+  );
+
+  return res.json({
+    success: true,
+    data: sections
+  });
+}
+
+async function getLecturesBySectionHandler(req, res) {
+  const { sectionId } = req.params;
+
+  const lectures = await getLecturesBySectionService(
+    sectionId,
+    req.user.creatorId
+  );
+
+  return res.json({
+    success: true,
+    data: lectures
+  });
+}
+
+async function getCreatorDashboardHandler(req, res) {
+  const data = await getCreatorDashboardService(req.user.creatorId);
+
+  return res.json({
+    success: true,
+    data
+  });
+}
+
 module.exports = {
   createCreatorHandler,
   getPublicCreatorCoursesHandler,
@@ -161,6 +198,8 @@ module.exports = {
   updateLectureVideoHandler,
   updateCourseThumbnailHandler,
   publishCourseHandler,
-  unpublishCourseHandler
-  
+  unpublishCourseHandler,
+  getSectionsByCourseHandler,
+  getLecturesBySectionHandler,
+  getCreatorDashboardHandler
 };

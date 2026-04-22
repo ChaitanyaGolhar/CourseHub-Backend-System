@@ -220,6 +220,74 @@ async function getCoursesWithCount(limit, offset) {
   };
 }
 
+async function getSectionsByCourseRepo(courseId, creatorId) {
+  const res = await pool.query(
+    `
+    SELECT s.*
+    FROM sections s
+    JOIN courses c ON s.course_id = c.id
+    WHERE s.course_id = $1 AND c.creator_id = $2
+    ORDER BY s.order_index ASC
+    `,
+    [courseId, creatorId]
+  );
+
+  return res.rows;
+}
+
+async function getLecturesBySectionRepo(sectionId, creatorId) {
+  const res = await pool.query(
+    `
+    SELECT l.*
+    FROM lectures l
+    JOIN sections s ON l.section_id = s.id
+    JOIN courses c ON s.course_id = c.id
+    WHERE l.section_id = $1 AND c.creator_id = $2
+    ORDER BY l.order_index ASC
+    `,
+    [sectionId, creatorId]
+  );
+
+  return res.rows;
+}
+
+async function getCreatorFullDataRepo(creatorId) {
+  const res = await pool.query(
+    `
+    SELECT 
+      c.id AS course_id,
+      c.title AS course_title,
+      c.description,
+      c.price,
+      c.thumbnail_url,
+      c.is_published,
+      c.created_at,
+
+      s.id AS section_id,
+      s.title AS section_title,
+      s.order_index AS section_order,
+
+      l.id AS lecture_id,
+      l.title AS lecture_title,
+      l.video_url,
+      l.order_index AS lecture_order,
+      l.is_preview
+
+    FROM courses c
+    LEFT JOIN sections s ON s.course_id = c.id
+    LEFT JOIN lectures l ON l.section_id = s.id
+    WHERE c.creator_id = $1
+    ORDER BY 
+      c.created_at DESC,
+      s.order_index ASC,
+      l.order_index ASC
+    `,
+    [creatorId]
+  );
+
+  return res.rows;
+}
+
 module.exports = {
   createCourseRepo,
   getCreatorCoursesRepo,
@@ -236,6 +304,9 @@ module.exports = {
   getPublishedCoursesByCreatorId,
   findCourseByIdAndCreator,
   findCourseById,
-  getCoursesWithCount
+  getCoursesWithCount,
+  getSectionsByCourseRepo,
+  getLecturesBySectionRepo,
+  getCreatorFullDataRepo
 
 };

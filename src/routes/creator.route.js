@@ -3,7 +3,7 @@ const router = express.Router();
 
 const auth = require("../middleware/auth.middleware");
 const validate = require("../middleware/validate.middleware");
-const { createCreatorHandler, getPublicCreatorCoursesHandler, createCourseHandler, updateCourseHandler, getCoursePublicHandler, createSectionHandler, createLectureHandler, updateLectureVideoHandler, updateCourseThumbnailHandler, publishCourseHandler, unpublishCourseHandler } = require("../controllers/creator.controller");
+const { createCreatorHandler, getPublicCreatorCoursesHandler, createCourseHandler, updateCourseHandler, getCoursePublicHandler, createSectionHandler, createLectureHandler, updateLectureVideoHandler, updateCourseThumbnailHandler, publishCourseHandler, unpublishCourseHandler, getSectionsByCourseHandler, getLecturesBySectionHandler, getCreatorDashboardHandler } = require("../controllers/creator.controller");
 const { createCreatorSchema, updateCourseSchema, createCourseSchema, createSectionSchema, createLectureSchema, updateLectureVideoSchema, updateCourseThumbnailSchema, publishUnpublishCourseSchema } = require("../validators/creator.validator");
 const requireCreator = require("../middleware/creator.middleware");
 const upload = require("../middleware/upload.middleware");
@@ -21,6 +21,8 @@ router.post("/course/:courseId/thumbnail", auth, requireCreator, upload.single("
 router.patch("/course/:courseId/publish", auth, requireCreator, validate(publishUnpublishCourseSchema), publishCourseHandler);
 router.patch("/course/:courseId/unpublish", auth, requireCreator, validate(publishUnpublishCourseSchema), unpublishCourseHandler);
 
-
+router.get("/courses/:courseId/sections", auth, requireCreator, getSectionsByCourseHandler);
+router.get("/sections/:sectionId/lectures", auth, requireCreator, getLecturesBySectionHandler);
+router.get("/dashboard", auth, requireCreator, getCreatorDashboardHandler);
 
 module.exports = router;
