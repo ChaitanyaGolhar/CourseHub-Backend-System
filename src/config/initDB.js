@@ -112,6 +112,19 @@ async function initDB() {
       );
     `);
 
+    // 🧱 ORDERS 
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS orders (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER REFERENCES users(id),
+      course_id INTEGER REFERENCES courses(id),
+      amount INTEGER NOT NULL,
+      status TEXT DEFAULT 'created', -- 'created' | 'paid' | 'failed'
+      razorpay_order_id TEXT UNIQUE,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );  
+    `);
+
     // 🧱 PURCHASES
     await pool.query(`
       CREATE TABLE purchases (
