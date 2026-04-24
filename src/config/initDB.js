@@ -23,6 +23,21 @@ async function initDB() {
         email TEXT UNIQUE NOT NULL,
         password TEXT NOT NULL,
         role TEXT DEFAULT 'user'
+        google_id TEXT UNIQUE,
+        name TEXT,
+        avatar TEXT,
+        provider TEXT DEFAULT 'local'
+      );
+    `);
+    // 🧱 LECTURE PROGRESS 
+    await pool.query(`
+      CREATE TABLE lecture_progress (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+      lecture_id INTEGER REFERENCES lectures(id) ON DELETE CASCADE,
+      is_completed BOOLEAN DEFAULT false,
+      completed_at TIMESTAMP,
+      UNIQUE(user_id, lecture_id)
       );
     `);
 

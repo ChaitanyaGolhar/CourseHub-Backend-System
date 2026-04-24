@@ -29,8 +29,29 @@ async function getUserPurchases(userId) {
   return res.rows;
 }
 
+async function getUserCourses(userId) {
+  const res = await pool.query(
+    `SELECT 
+        c.id,
+        c.title,
+        c.description,
+        c.thumbnail_url,
+        c.price,
+        c.created_at
+     FROM purchases p
+     JOIN courses c ON p.course_id = c.id
+     WHERE p.user_id = $1
+     ORDER BY c.created_at DESC`,
+    [userId]
+  );
+
+  return res.rows;
+}
+
 module.exports = {
   isAlreadyPurchased,
   createPurchase,
-  getUserPurchases
+  getUserPurchases,
+  getUserCourses
+
 };

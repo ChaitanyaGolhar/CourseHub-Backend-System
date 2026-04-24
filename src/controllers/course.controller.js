@@ -31,7 +31,7 @@ async function getCourses(req, res) {
 }
 
 async function purchaseCourse(req, res) {
-    const courseId = req.validatedData.params.creatorId;
+    const courseId = req.validatedData.params.id;
 
     const course = await findCourseById(courseId);
 
@@ -44,7 +44,7 @@ async function purchaseCourse(req, res) {
     }
 
     const exists = await purchaseCourseService({ 
-      userId: req.user.creatorId,
+      userId: req.user.id,
       courseId });
 
     return res.status(201).json({ 
@@ -54,7 +54,7 @@ async function purchaseCourse(req, res) {
 }
 
 async function getPurchasedCourses(req, res) {
-  const courses = await getUserPurchases(req.user.creatorId);
+  const courses = await getUserPurchases(req.user.id);
   return res.json({ 
     success: true,
     data: { courses }

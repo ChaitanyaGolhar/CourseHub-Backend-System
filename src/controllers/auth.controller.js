@@ -5,6 +5,7 @@ const { success } = require("zod");
 const { th } = require("zod/locales");
 const AppError = require("../utils/AppError");
 const { findCreatorByUserId } = require("../repositories/creator.repo");
+const { googleLoginService } = require("../services/auth.service");
 
 async function signup(req, res) {
     const { email, password } = req.validatedData.body;
@@ -15,11 +16,15 @@ async function signup(req, res) {
     }
 
     const hash = await bcrypt.hash(password, 10);
-    await createUser(email, hash);
+    const user = await createUser({
+    email,
+    password: hash,
+    provider: "local"
+  });
 
     return res.status(201).json({ 
       success: true,
-      message: "user created"
+      message: "signup successful"
     });
    
 }
@@ -55,7 +60,39 @@ async function login(req, res) {
       message: "login successful",
       data: { token }
     });
-  
 }
 
-module.exports = { signup, login };
+async function googleLogin(req, res) {
+  const { idToken } = req.body;
+
+  const user = await googleLoginService(idToken);
+
+  const creator = await findCreatorByUserId(user.id);
+
+  const token = jwt.sign(
+    {
+      userId: user.id,
+      role: user.role,
+      creatorId: creator?.id || null
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: "1h" }
+  );
+
+  return res.json({
+    success: true,
+    message: "google login successful",
+    data: {
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        avatar: user.avatar,
+        role: user.role
+      }
+    }
+  });
+}
+
+module.exports = { signup, login, googleLogin };

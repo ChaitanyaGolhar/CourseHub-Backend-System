@@ -1,4 +1,5 @@
 const { findUserById } = require("../repositories/user.repo");
+const { getUserCoursesService } = require("../services/user.service");
 const AppError = require("../utils/AppError");
 
 async function getProfile(req, res) {
@@ -14,4 +15,13 @@ async function getProfile(req, res) {
     });
 }
 
-module.exports = { getProfile };
+async function getMyCourses(req, res) {
+  const courses = await getUserCoursesService(req.user.id);
+
+  return res.json({
+    success: true,
+    data: { courses }
+  });
+}
+
+module.exports = { getProfile, getMyCourses };

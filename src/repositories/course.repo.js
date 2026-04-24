@@ -288,6 +288,48 @@ async function getCreatorFullDataRepo(creatorId) {
   return res.rows;
 }
 
+async function getUserCourses(userId) {
+  const res = await pool.query(
+    `SELECT c.*
+     FROM purchases p
+     JOIN courses c ON p.course_id = c.id
+     WHERE p.user_id = $1`,
+    [userId]
+  );
+
+  return res.rows;
+}
+
+async function getSectionsByCourse(courseId) {
+  const res = await pool.query(
+    `SELECT id, title, course_id, order_index
+     FROM sections
+     WHERE course_id = $1
+     ORDER BY order_index ASC`,
+    [courseId]
+  );
+
+  return res.rows;
+}
+
+async function getLecturesByCourse(courseId) {
+  const res = await pool.query(
+    `SELECT l.id,
+            l.title,
+            l.video_url,
+            l.section_id,
+            l.order_index,
+            l.is_preview
+     FROM lectures l
+     JOIN sections s ON l.section_id = s.id
+     WHERE s.course_id = $1
+     ORDER BY l.section_id ASC, l.order_index ASC`,
+    [courseId]
+  );
+
+  return res.rows;
+}
+
 module.exports = {
   createCourseRepo,
   getCreatorCoursesRepo,
@@ -307,6 +349,9 @@ module.exports = {
   getCoursesWithCount,
   getSectionsByCourseRepo,
   getLecturesBySectionRepo,
-  getCreatorFullDataRepo
+  getCreatorFullDataRepo,
+  getUserCourses,
+  getSectionsByCourse,
+  getLecturesByCourse
 
 };
