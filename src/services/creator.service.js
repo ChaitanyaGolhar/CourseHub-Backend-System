@@ -2,6 +2,7 @@ const { findCreatorByUserId, findCreatorByHandle, createCreator } = require("../
 const AppError = require("../utils/AppError");
 const { createCourseRepo, getCreatorCoursesRepo, updateCourseRepo, deleteCourseRepo, createSectionRepo, createLectureRepo, updateLectureVideoRepo, updateCourseThumbnailRepo, publishCourseRepo, unpublishCourseRepo, getMaxSectionOrder, getMaxLectureOrder, getPublishedCoursesByCreatorId, getSectionsByCourseRepo, getLecturesBySectionRepo, getCreatorFullDataRepo } = require("../repositories/course.repo");
 const uploadToCloudinary  = require("../utils/uploadToCloudinary");
+const { client: redis } = require("../config/redis");
 
 async function createCreatorService({ userId, handle, brandName }) {
   // 1. check user already creator
@@ -22,18 +23,31 @@ async function createCreatorService({ userId, handle, brandName }) {
   return await createCreator(userId, handle, brandName);
 }
 
+
 async function getPublicCreatorCoursesService(handle) {
-  // 1. resolve creator
+  const cacheKey = `public:courses:${handle}`;
+
+  // 1. Check cache
+  const cachedData = await redis.get(cacheKey);
+
+  if (cachedData) {
+    console.log("CACHE HIT");
+    return JSON.parse(cachedData);
+  }
+
+  console.log("CACHE MISS");
+
+  // 2. resolve creator
   const creator = await findCreatorByHandle(handle);
 
   if (!creator) {
     throw new AppError("creator not found", 404);
   }
 
-  // 2. fetch courses
+  // 3. fetch courses
   const courses = await getPublishedCoursesByCreatorId(creator.id);
 
-  return {
+  const response = {
     creator: {
       id: creator.id,
       handle: creator.handle,
@@ -41,6 +55,13 @@ async function getPublicCreatorCoursesService(handle) {
     },
     courses
   };
+
+  // 4. store in cache
+  await redis.set(cacheKey, JSON.stringify(response), {
+    EX: 60
+  });
+
+  return response;
 }
 
 async function createCourseService({ body, file, creatorId }) {
