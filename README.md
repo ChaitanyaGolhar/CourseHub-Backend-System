@@ -111,15 +111,43 @@ Follows clean layered architecture:
 ---
 
 ## 📂 Project Structure
+## 📂 Project Structure
+
+```
 src/
-├── config/
-├── controllers/
-├── middleware/
-├── repositories/
-├── routes/
-├── services/
-├── utils/
-└── validators/
+├── config/         # External services & configs (DB, Redis, Cloudinary, Logger)
+├── controllers/    # Request handlers (HTTP layer)
+├── middleware/     # Auth, validation, error handling, rate limiting
+├── repositories/   # Database queries (data access layer)
+├── routes/         # API route definitions
+├── services/       # Business logic layer
+├── utils/          # Helpers, custom errors, utilities
+└── validators/     # Zod schemas for request validation
+```
+
+---
+
+### 🔍 Folder Breakdown
+
+* **config/** → Database, Redis, Cloudinary, logger setup
+* **controllers/** → Handles incoming requests and sends responses
+* **middleware/** → Authentication, validation, error handling, rate limiting
+* **repositories/** → Direct database interaction (SQL queries)
+* **routes/** → API endpoint definitions
+* **services/** → Core business logic (main brain of the app)
+* **utils/** → Helper functions and reusable utilities
+* **validators/** → Request validation using Zod
+
+---
+
+### 🧠 Architecture Pattern
+
+```
+Request → Route → Controller → Service → Repository → Database
+                                     ↓
+                                Response
+```
+
 ---
 
 ## ⚙️ Environment Variables
