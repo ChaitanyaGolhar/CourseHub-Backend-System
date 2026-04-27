@@ -6,12 +6,6 @@ This project is designed with real-world backend engineering principles includin
 
 ---
 
-## 🚀 Live API
-
-👉 https://coursehub-backend-system-production.up.railway.app
-
----
-
 ## ✨ Core Features
 
 ### 🔐 Authentication & Authorization
