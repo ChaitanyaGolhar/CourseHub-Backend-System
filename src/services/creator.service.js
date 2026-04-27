@@ -27,8 +27,12 @@ async function createCreatorService({ userId, handle, brandName }) {
 async function getPublicCreatorCoursesService(handle) {
   const cacheKey = `public:courses:${handle}`;
 
-  // 1. Check cache
-  const cachedData = await redis.get(cacheKey);
+  let cachedData = null;
+  try {
+    cachedData = await redis.get(cacheKey);
+  } catch (err) {
+    console.error("Redis GET failed:", err.message);
+  }
 
   if (cachedData) {
     console.log("CACHE HIT");
@@ -36,15 +40,12 @@ async function getPublicCreatorCoursesService(handle) {
   }
 
   console.log("CACHE MISS");
-
-  // 2. resolve creator
   const creator = await findCreatorByHandle(handle);
 
   if (!creator) {
     throw new AppError("creator not found", 404);
   }
 
-  // 3. fetch courses
   const courses = await getPublishedCoursesByCreatorId(creator.id);
 
   const response = {
@@ -56,10 +57,13 @@ async function getPublicCreatorCoursesService(handle) {
     courses
   };
 
-  // 4. store in cache
-  await redis.set(cacheKey, JSON.stringify(response), {
-    EX: 60
-  });
+  try {
+    await redis.set(cacheKey, JSON.stringify(response), {
+      EX: 60
+    });
+  } catch (err) {
+    console.error("Redis SET failed:", err.message);
+  }
 
   return response;
 }
