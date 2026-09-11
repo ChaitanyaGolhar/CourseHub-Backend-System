@@ -51,6 +51,7 @@ Create a `.env` file with:
 
 ```env
 PORT=3000
+CORS_ORIGINS=http://localhost:5173,https://app.example.com
 PGURI=your_postgres_url
 JWT_SECRET=your_secret
 GOOGLE_CLIENT_ID=your_client_id
@@ -59,6 +60,8 @@ CLOUDINARY_API_KEY=
 CLOUDINARY_API_SECRET=
 REDIS_URL=
 ```
+
+`CORS_ORIGINS` accepts a comma-separated list of exact origins. Requests without an `Origin` header are still allowed for server-to-server and command-line clients; browser requests from any other origin are rejected.
 
 ## Run Locally
 
